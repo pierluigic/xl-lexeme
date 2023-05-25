@@ -1,5 +1,5 @@
 # XL-LEXEME
-WiC pretrained model for Cross-Lingual LEXical sEMantic changE
+WiC Pretrained Model for Cross-Lingual LEXical sEMantic changE
 
 Install the libaries:
 ```
