@@ -17,8 +17,8 @@ Usage:
 ```python
 from InputExample import InputExample
 
-examples = InputExample(texts=["the quick fox jumps over the lazy dog"], positions=[[10,13]])
-fox_embedding = model.encode(examples)[0] #The embedding of the target word "fox"
+examples = InputExample(texts="the quick fox jumps over the lazy dog", positions=[10,13])
+fox_embedding = model.encode(examples) #The embedding of the target word "fox"
 ```
 
 
