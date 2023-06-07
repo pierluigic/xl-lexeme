@@ -1,0 +1,902 @@
+[
+    {
+        "id": "dev.ru-ru.mcl-wic.65",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.168",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.986",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.696",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.493",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.79",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.479",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.884",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.293",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.70",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.86",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.973",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.788",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.394",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.467",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.540",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.628",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.59",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.926",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.365",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.231",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.611",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.743",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.963",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.472",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.85",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.312",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.9",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.987",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.148",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.573",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.837",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.366",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.815",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.900",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.287",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.12",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.627",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.864",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.267",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.779",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.854",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.840",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.608",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.483",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.149",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.526",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.306",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.81",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.972",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.626",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.587",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.736",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.535",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.742",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.395",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.518",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.538",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.520",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.8",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.263",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.697",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.855",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.764",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.947",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.776",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.482",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.7",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.362",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.307",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.656",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.901",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.345",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.141",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.349",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.6",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.650",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.756",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.466",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.805",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.80",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.998",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.332",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.220",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.609",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.804",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.460",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.436",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.735",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.999",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.571",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.56",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.76",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.943",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.492",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.434",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.633",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.637",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.51",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.896",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.400",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.495",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.757",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.232",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.221",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.789",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.155",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.385",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.71",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.727",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.443",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.534",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.845",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.341",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.426",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.961",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.836",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.340",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.871",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.777",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.455",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.866",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.2",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.494",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.737",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.266",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.463",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.421",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.586",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.124",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.226",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.791",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.435",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.84",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.907",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.711",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.156",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.841",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.681",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.420",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.662",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.790",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.950",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.665",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.761",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.140",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.78",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.380",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.778",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.620",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.73",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.432",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.659",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.292",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.459",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.955",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.106",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.205",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.107",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.427",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.10",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.190",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.77",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.951",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.771",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.157",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.844",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.367",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.442",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.13",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.355",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.58",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.906",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.364",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.760",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.770",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.461",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.42",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.454",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.572",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.557",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.946",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.651",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.100",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.233",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.734",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.604",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.154",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.726",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.680",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.897",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.222",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.401",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.706",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.433",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.583",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.695",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.262",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.125",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.101",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.217",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.570",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.134",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.105",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.693",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.541",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.191",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.309",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.658",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.240",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.57",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.694",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.629",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.447",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.50",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.308",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.64",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.403",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.738",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.664",
+        "tag": "T"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.478",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.886",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.363",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.954",
+        "tag": "F"
+    },
+    {
+        "id": "dev.ru-ru.mcl-wic.885",
+        "tag": "T"
+    }
+]
