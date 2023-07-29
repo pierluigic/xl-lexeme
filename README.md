@@ -25,5 +25,19 @@ fox_embedding = model.encode(examples) #The embedding of the target word "fox"
 <b> Citation </b>
 
 ```
-
+@inproceedings{cassotti-etal-2023-xl,
+    title = "{XL}-{LEXEME}: {W}i{C} Pretrained Model for Cross-Lingual {LEX}ical s{EM}antic chang{E}",
+    author = "Cassotti, Pierluigi  and
+      Siciliani, Lucia  and
+      DeGemmis, Marco  and
+      Semeraro, Giovanni  and
+      Basile, Pierpaolo",
+    booktitle = "Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)",
+    month = jul,
+    year = "2023",
+    address = "Toronto, Canada",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2023.acl-short.135",
+    pages = "1577--1585"
+}
 ```
