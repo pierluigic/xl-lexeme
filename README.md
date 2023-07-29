@@ -1,9 +1,11 @@
 # XL-LEXEME
 WiC Pretrained Model for Cross-Lingual LEXical sEMantic changE
 
-Install the libaries:
+Install the library:
 ```
-pip install -U sentence-transformers
+git clone git@github.com:pierluigic/xl-lexeme.git
+cd xl-lexeme
+pip3 install .
 ```
 
 Load the model (the model is available in the Hugging Face Model Hub https://huggingface.co/pierluigic/xl-lexeme):
