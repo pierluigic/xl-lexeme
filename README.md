@@ -1,6 +1,6 @@
 # XL-LEXEME
 WiC Pretrained Model for Cross-Lingual LEXical sEMantic changE
-Paper: [https://aclanthology.org/2023.acl-short.135.pdf]
+(https://aclanthology.org/2023.acl-short.135.pdf)
 
 Install the library:
 ```
