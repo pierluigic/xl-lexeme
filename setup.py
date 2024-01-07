@@ -17,7 +17,7 @@ try:
 except:
     reqs = [str(ir.requirement) for ir in install_reqs]
 
-reqs.append('sentence_trasformers')
+reqs.append('sentence-transformers==2.2.2')
 
 setuptools.setup(
     name="WordTransformer",
