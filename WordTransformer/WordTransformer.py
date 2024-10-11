@@ -4,7 +4,6 @@ import os
 import shutil
 import stat
 from collections import OrderedDict
-from typing import List, Dict, Tuple, Iterable, Type, Union, Callable, Optional
 import requests
 import numpy as np
 from numpy import ndarray
@@ -16,17 +15,31 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 import torch.multiprocessing as mp
 from tqdm.autonotebook import trange
+from pathlib import Path
 import math
 import queue
 import tempfile
 from distutils.dir_util import copy_tree
-
+from typing import Any, Callable, Iterable, Iterator, Literal, overload, Union, List, Dict, Tuple, Optional, Type
 from sentence_transformers import __MODEL_HUB_ORGANIZATION__
 from sentence_transformers.evaluation import SentenceEvaluator
+from sentence_transformers.model_card import SentenceTransformerModelCardData, generate_model_card
 from sentence_transformers.util import import_from_string, batch_to_device, fullname, snapshot_download
 from sentence_transformers.models import Transformer, Pooling, Dense
 from sentence_transformers.model_card_templates import ModelCardTemplate
 from sentence_transformers import __version__
+from sentence_transformers.similarity_functions import SimilarityFunction
+from sentence_transformers.models import Normalize, Pooling, Transformer
+from sentence_transformers.util import (
+    batch_to_device,
+    get_device_name,
+    import_from_string,
+    is_sentence_transformer_model,
+    load_dir_path,
+    load_file_path,
+    save_to_hub_args_decorator,
+    truncate_embeddings,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,63 +52,228 @@ class WordTransformer(nn.Sequential):
     :param device: Device (like 'cuda' / 'cpu') that should be used for computation. If None, checks if a GPU can be used.
     :param cache_folder: Path to store models
     """
-    def __init__(self, model_name_or_path: Optional[str] = None, modules: Optional[Iterable[nn.Module]] = None, device: Optional[str] = None, cache_folder: Optional[str] = None):
+    def __init__(
+        self,
+        model_name_or_path: str | None = None,
+        modules: Iterable[nn.Module] | None = None,
+        device: str | None = None,
+        prompts: dict[str, str] | None = None,
+        default_prompt_name: str | None = None,
+        similarity_fn_name: str | SimilarityFunction | None = None,
+        cache_folder: str | None = None,
+        trust_remote_code: bool = False,
+        revision: str | None = None,
+        local_files_only: bool = False,
+        token: bool | str | None = None,
+        use_auth_token: bool | str | None = None,
+        truncate_dim: int | None = None,
+        model_kwargs: dict[str, any] | None = None,
+        tokenizer_kwargs: dict[str, any] | None = None,
+        config_kwargs: dict[str, any] | None = None,
+        model_card_data: SentenceTransformerModelCardData | None = None
+    ) -> None:
+        # Note: self._load_sbert_model can also update `self.prompts` and `self.default_prompt_name`
+        self.prompts = prompts or {}
+        self.default_prompt_name = default_prompt_name
+        self.similarity_fn_name = similarity_fn_name
+        self.trust_remote_code = trust_remote_code
+        self.truncate_dim = truncate_dim
+        self.model_card_data = model_card_data or SentenceTransformerModelCardData()
+        self.module_kwargs = None
         self._model_card_vars = {}
         self._model_card_text = None
         self._model_config = {}
+        if use_auth_token is not None:
+            warnings.warn(
+                "The `use_auth_token` argument is deprecated and will be removed in v4 of SentenceTransformers.",
+                FutureWarning,
+            )
+            if token is not None:
+                raise ValueError(
+                    "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
+                )
+            token = use_auth_token
 
         if cache_folder is None:
-            cache_folder = os.getenv('SENTENCE_TRANSFORMERS_HOME')
-            if cache_folder is None:
-                try:
-                    from torch.hub import _get_torch_home
+            cache_folder = os.getenv("SENTENCE_TRANSFORMERS_HOME")
 
-                    torch_cache_home = _get_torch_home()
-                except ImportError:
-                    torch_cache_home = os.path.expanduser(os.getenv('TORCH_HOME', os.path.join(os.getenv('XDG_CACHE_HOME', '~/.cache'), 'torch')))
+        if device is None:
+            device = get_device_name()
+            logger.info(f"Use pytorch device_name: {device}")
 
-                cache_folder = os.path.join(torch_cache_home, 'sentence_transformers')
+        if device == "hpu" and importlib.util.find_spec("optimum") is not None:
+            from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+
+            adapt_transformers_to_gaudi()
 
         if model_name_or_path is not None and model_name_or_path != "":
-            logger.info("Load pretrained SentenceTransformer: {}".format(model_name_or_path))
+            logger.info(f"Load pretrained SentenceTransformer: {model_name_or_path}")
 
-            #Old models that don't belong to any organization
-            basic_transformer_models = ['albert-base-v1', 'albert-base-v2', 'albert-large-v1', 'albert-large-v2', 'albert-xlarge-v1', 'albert-xlarge-v2', 'albert-xxlarge-v1', 'albert-xxlarge-v2', 'bert-base-cased-finetuned-mrpc', 'bert-base-cased', 'bert-base-chinese', 'bert-base-german-cased', 'bert-base-german-dbmdz-cased', 'bert-base-german-dbmdz-uncased', 'bert-base-multilingual-cased', 'bert-base-multilingual-uncased', 'bert-base-uncased', 'bert-large-cased-whole-word-masking-finetuned-squad', 'bert-large-cased-whole-word-masking', 'bert-large-cased', 'bert-large-uncased-whole-word-masking-finetuned-squad', 'bert-large-uncased-whole-word-masking', 'bert-large-uncased', 'camembert-base', 'ctrl', 'distilbert-base-cased-distilled-squad', 'distilbert-base-cased', 'distilbert-base-german-cased', 'distilbert-base-multilingual-cased', 'distilbert-base-uncased-distilled-squad', 'distilbert-base-uncased-finetuned-sst-2-english', 'distilbert-base-uncased', 'distilgpt2', 'distilroberta-base', 'gpt2-large', 'gpt2-medium', 'gpt2-xl', 'gpt2', 'openai-gpt', 'roberta-base-openai-detector', 'roberta-base', 'roberta-large-mnli', 'roberta-large-openai-detector', 'roberta-large', 't5-11b', 't5-3b', 't5-base', 't5-large', 't5-small', 'transfo-xl-wt103', 'xlm-clm-ende-1024', 'xlm-clm-enfr-1024', 'xlm-mlm-100-1280', 'xlm-mlm-17-1280', 'xlm-mlm-en-2048', 'xlm-mlm-ende-1024', 'xlm-mlm-enfr-1024', 'xlm-mlm-enro-1024', 'xlm-mlm-tlm-xnli15-1024', 'xlm-mlm-xnli15-1024', 'xlm-roberta-base', 'xlm-roberta-large-finetuned-conll02-dutch', 'xlm-roberta-large-finetuned-conll02-spanish', 'xlm-roberta-large-finetuned-conll03-english', 'xlm-roberta-large-finetuned-conll03-german', 'xlm-roberta-large', 'xlnet-base-cased', 'xlnet-large-cased']
+            # Old models that don't belong to any organization
+            basic_transformer_models = [
+                "albert-base-v1",
+                "albert-base-v2",
+                "albert-large-v1",
+                "albert-large-v2",
+                "albert-xlarge-v1",
+                "albert-xlarge-v2",
+                "albert-xxlarge-v1",
+                "albert-xxlarge-v2",
+                "bert-base-cased-finetuned-mrpc",
+                "bert-base-cased",
+                "bert-base-chinese",
+                "bert-base-german-cased",
+                "bert-base-german-dbmdz-cased",
+                "bert-base-german-dbmdz-uncased",
+                "bert-base-multilingual-cased",
+                "bert-base-multilingual-uncased",
+                "bert-base-uncased",
+                "bert-large-cased-whole-word-masking-finetuned-squad",
+                "bert-large-cased-whole-word-masking",
+                "bert-large-cased",
+                "bert-large-uncased-whole-word-masking-finetuned-squad",
+                "bert-large-uncased-whole-word-masking",
+                "bert-large-uncased",
+                "camembert-base",
+                "ctrl",
+                "distilbert-base-cased-distilled-squad",
+                "distilbert-base-cased",
+                "distilbert-base-german-cased",
+                "distilbert-base-multilingual-cased",
+                "distilbert-base-uncased-distilled-squad",
+                "distilbert-base-uncased-finetuned-sst-2-english",
+                "distilbert-base-uncased",
+                "distilgpt2",
+                "distilroberta-base",
+                "gpt2-large",
+                "gpt2-medium",
+                "gpt2-xl",
+                "gpt2",
+                "openai-gpt",
+                "roberta-base-openai-detector",
+                "roberta-base",
+                "roberta-large-mnli",
+                "roberta-large-openai-detector",
+                "roberta-large",
+                "t5-11b",
+                "t5-3b",
+                "t5-base",
+                "t5-large",
+                "t5-small",
+                "transfo-xl-wt103",
+                "xlm-clm-ende-1024",
+                "xlm-clm-enfr-1024",
+                "xlm-mlm-100-1280",
+                "xlm-mlm-17-1280",
+                "xlm-mlm-en-2048",
+                "xlm-mlm-ende-1024",
+                "xlm-mlm-enfr-1024",
+                "xlm-mlm-enro-1024",
+                "xlm-mlm-tlm-xnli15-1024",
+                "xlm-mlm-xnli15-1024",
+                "xlm-roberta-base",
+                "xlm-roberta-large-finetuned-conll02-dutch",
+                "xlm-roberta-large-finetuned-conll02-spanish",
+                "xlm-roberta-large-finetuned-conll03-english",
+                "xlm-roberta-large-finetuned-conll03-german",
+                "xlm-roberta-large",
+                "xlnet-base-cased",
+                "xlnet-large-cased",
+            ]
 
-            if os.path.exists(model_name_or_path):
-                #Load from path
-                model_path = model_name_or_path
-            else:
-                #Not a path, load from hub
-                if '\\' in model_name_or_path or model_name_or_path.count('/') > 1:
-                    raise ValueError("Path {} not found".format(model_name_or_path))
+            if not os.path.exists(model_name_or_path):
+                # Not a path, load from hub
+                if "\\" in model_name_or_path or model_name_or_path.count("/") > 1:
+                    raise ValueError(f"Path {model_name_or_path} not found")
 
-                if '/' not in model_name_or_path and model_name_or_path.lower() not in basic_transformer_models:
+                if "/" not in model_name_or_path and model_name_or_path.lower() not in basic_transformer_models:
                     # A model from sentence-transformers
                     model_name_or_path = __MODEL_HUB_ORGANIZATION__ + "/" + model_name_or_path
 
-                model_path = os.path.join(cache_folder, model_name_or_path.replace("/", "_"))
-
-                # Download from hub with caching
-                snapshot_download(model_name_or_path,
-                                    cache_dir=cache_folder,
-                                    library_name='sentence-transformers',
-                                    library_version=__version__)
-
-            if os.path.exists(os.path.join(model_path, 'modules.json')):    #Load as SentenceTransformer model
-                modules = self._load_sbert_model(model_path)
-            else:   #Load with AutoModel
-                modules = self._load_auto_model(model_path)
+            if is_sentence_transformer_model(
+                model_name_or_path,
+                token,
+                cache_folder=cache_folder,
+                revision=revision,
+                local_files_only=local_files_only,
+            ):
+                modules, self.module_kwargs = self._load_sbert_model(
+                    model_name_or_path,
+                    token=token,
+                    cache_folder=cache_folder,
+                    revision=revision,
+                    trust_remote_code=trust_remote_code,
+                    local_files_only=local_files_only,
+                    model_kwargs=model_kwargs,
+                    tokenizer_kwargs=tokenizer_kwargs,
+                    config_kwargs=config_kwargs,
+                )
+            else:
+                modules = self._load_auto_model(
+                    model_name_or_path,
+                    token=token,
+                    cache_folder=cache_folder,
+                    revision=revision,
+                    trust_remote_code=trust_remote_code,
+                    local_files_only=local_files_only,
+                    model_kwargs=model_kwargs,
+                    tokenizer_kwargs=tokenizer_kwargs,
+                    config_kwargs=config_kwargs,
+                )
 
         if modules is not None and not isinstance(modules, OrderedDict):
             modules = OrderedDict([(str(idx), module) for idx, module in enumerate(modules)])
 
         super().__init__(modules)
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            logger.info("Use pytorch device: {}".format(device))
 
-        self._target_device = torch.device(device)
+        # Ensure all tensors in the model are of the same dtype as the first tensor
+        # This is necessary if the first module has been given a lower precision via
+        # model_kwargs["torch_dtype"]. The rest of the model should be loaded in the same dtype
+        # See #2887 for more details
+        try:
+            dtype = next(self.parameters()).dtype
+            self.to(dtype)
+        except StopIteration:
+            pass
+
+        self.to(device)
+        self.is_hpu_graph_enabled = False
+
+        if self.default_prompt_name is not None and self.default_prompt_name not in self.prompts:
+            raise ValueError(
+                f"Default prompt name '{self.default_prompt_name}' not found in the configured prompts "
+                f"dictionary with keys {list(self.prompts.keys())!r}."
+            )
+
+        if self.prompts:
+            logger.info(f"{len(self.prompts)} prompts are loaded, with the keys: {list(self.prompts.keys())}")
+        if self.default_prompt_name:
+            logger.warning(
+                f"Default prompt name is set to '{self.default_prompt_name}'. "
+                "This prompt will be applied to all `encode()` calls, except if `encode()` "
+                "is called with `prompt` or `prompt_name` parameters."
+            )
+
+        # Ideally, INSTRUCTOR models should set `include_prompt=False` in their pooling configuration, but
+        # that would be a breaking change for users currently using the InstructorEmbedding project.
+        # So, instead we hardcode setting it for the main INSTRUCTOR models, and otherwise give a warning if we
+        # suspect the user is using an INSTRUCTOR model.
+        if model_name_or_path in ("hkunlp/instructor-base", "hkunlp/instructor-large", "hkunlp/instructor-xl"):
+            self.set_pooling_include_prompt(include_prompt=False)
+        elif (
+            model_name_or_path
+            and "/" in model_name_or_path
+            and "instructor" in model_name_or_path.split("/")[1].lower()
+        ):
+            if any([module.include_prompt for module in self if isinstance(module, Pooling)]):
+                logger.warning(
+                    "Instructor models require `include_prompt=False` in the pooling configuration. "
+                    "Either update the model configuration or call `model.set_pooling_include_prompt(False)` after loading the model."
+                )
+
+        # Pass the model to the model card data for later use in generating a model card upon saving this model
+        self.model_card_data.register_model(self)
+
 
 
 
@@ -863,42 +1041,224 @@ class WordTransformer(nn.Sequential):
         pooling_model = Pooling(transformer_model.get_word_embedding_dimension(), 'mean')
         return [transformer_model, pooling_model]
 
-    def _load_sbert_model(self, model_path):
+    def _load_sbert_model(
+        self,
+        model_name_or_path: str,
+        token: bool | str | None,
+        cache_folder: str | None,
+        revision: str | None = None,
+        trust_remote_code: bool = False,
+        local_files_only: bool = False,
+        model_kwargs: dict[str, Any] | None = None,
+        tokenizer_kwargs: dict[str, Any] | None = None,
+        config_kwargs: dict[str, Any] | None = None,
+    ) -> dict[str, nn.Module]:
         """
-        Loads a full sentence-transformers model
+        Loads a full SentenceTransformer model using the modules.json file.
+
+        Args:
+            model_name_or_path (str): The name or path of the pre-trained model.
+            token (Optional[Union[bool, str]]): The token to use for the model.
+            cache_folder (Optional[str]): The folder to cache the model.
+            revision (Optional[str], optional): The revision of the model. Defaults to None.
+            trust_remote_code (bool, optional): Whether to trust remote code. Defaults to False.
+            local_files_only (bool, optional): Whether to use only local files. Defaults to False.
+            model_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments for the model. Defaults to None.
+            tokenizer_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments for the tokenizer. Defaults to None.
+            config_kwargs (Optional[Dict[str, Any]], optional): Additional keyword arguments for the config. Defaults to None.
+
+        Returns:
+            OrderedDict[str, nn.Module]: An ordered dictionary containing the modules of the model.
         """
         # Check if the config_sentence_transformers.json file exists (exists since v2 of the framework)
-        config_sentence_transformers_json_path = os.path.join(model_path, 'config_sentence_transformers.json')
-        if os.path.exists(config_sentence_transformers_json_path):
+        config_sentence_transformers_json_path = load_file_path(
+            model_name_or_path,
+            "config_sentence_transformers.json",
+            token=token,
+            cache_folder=cache_folder,
+            revision=revision,
+            local_files_only=local_files_only,
+        )
+        if config_sentence_transformers_json_path is not None:
             with open(config_sentence_transformers_json_path) as fIn:
                 self._model_config = json.load(fIn)
 
-            if '__version__' in self._model_config and 'sentence_transformers' in self._model_config['__version__'] and self._model_config['__version__']['sentence_transformers'] > __version__:
-                logger.warning("You try to use a model that was created with version {}, however, your version is {}. This might cause unexpected behavior or errors. In that case, try to update to the latest version.\n\n\n".format(self._model_config['__version__']['sentence_transformers'], __version__))
+            if (
+                "__version__" in self._model_config
+                and "sentence_transformers" in self._model_config["__version__"]
+                and self._model_config["__version__"]["sentence_transformers"] > __version__
+            ):
+                logger.warning(
+                    "You try to use a model that was created with version {}, however, your version is {}. This might cause unexpected behavior or errors. In that case, try to update to the latest version.\n\n\n".format(
+                        self._model_config["__version__"]["sentence_transformers"], __version__
+                    )
+                )
+
+            # Set score functions & prompts if not already overridden by the __init__ calls
+            if self.similarity_fn_name is None:
+                self.similarity_fn_name = self._model_config.get("similarity_fn_name", None)
+            if not self.prompts:
+                self.prompts = self._model_config.get("prompts", {})
+            if not self.default_prompt_name:
+                self.default_prompt_name = self._model_config.get("default_prompt_name", None)
 
         # Check if a readme exists
-        model_card_path = os.path.join(model_path, 'README.md')
-        if os.path.exists(model_card_path):
+        model_card_path = load_file_path(
+            model_name_or_path,
+            "README.md",
+            token=token,
+            cache_folder=cache_folder,
+            revision=revision,
+            local_files_only=local_files_only,
+        )
+        if model_card_path is not None:
             try:
-                with open(model_card_path, encoding='utf8') as fIn:
+                with open(model_card_path, encoding="utf8") as fIn:
                     self._model_card_text = fIn.read()
-            except:
+            except Exception:
                 pass
 
         # Load the modules of sentence transformer
-        modules_json_path = os.path.join(model_path, 'modules.json')
+        modules_json_path = load_file_path(
+            model_name_or_path,
+            "modules.json",
+            token=token,
+            cache_folder=cache_folder,
+            revision=revision,
+            local_files_only=local_files_only,
+        )
         with open(modules_json_path) as fIn:
             modules_config = json.load(fIn)
 
         modules = OrderedDict()
+        module_kwargs = OrderedDict()
         for module_config in modules_config:
-            module_class = import_from_string(module_config['type'])
-            module = module_class.load(os.path.join(model_path, module_config['path']))
-            modules[module_config['name']] = module
+            class_ref = module_config["type"]
+            module_class = self._load_module_class_from_ref(
+                class_ref, model_name_or_path, trust_remote_code, revision, model_kwargs
+            )
 
-        return modules
+            # For Transformer, don't load the full directory, rely on `transformers` instead
+            # But, do load the config file first.
+            if module_config["path"] == "":
+                kwargs = {}
+                for config_name in [
+                    "sentence_bert_config.json",
+                    "sentence_roberta_config.json",
+                    "sentence_distilbert_config.json",
+                    "sentence_camembert_config.json",
+                    "sentence_albert_config.json",
+                    "sentence_xlm-roberta_config.json",
+                    "sentence_xlnet_config.json",
+                ]:
+                    config_path = load_file_path(
+                        model_name_or_path,
+                        config_name,
+                        token=token,
+                        cache_folder=cache_folder,
+                        revision=revision,
+                        local_files_only=local_files_only,
+                    )
+                    if config_path is not None:
+                        with open(config_path) as fIn:
+                            kwargs = json.load(fIn)
+                            # Don't allow configs to set trust_remote_code
+                            if "model_args" in kwargs and "trust_remote_code" in kwargs["model_args"]:
+                                kwargs["model_args"].pop("trust_remote_code")
+                            if "tokenizer_args" in kwargs and "trust_remote_code" in kwargs["tokenizer_args"]:
+                                kwargs["tokenizer_args"].pop("trust_remote_code")
+                            if "config_args" in kwargs and "trust_remote_code" in kwargs["config_args"]:
+                                kwargs["config_args"].pop("trust_remote_code")
+                        break
+
+                hub_kwargs = {
+                    "token": token,
+                    "trust_remote_code": trust_remote_code,
+                    "revision": revision,
+                    "local_files_only": local_files_only,
+                }
+                # 3rd priority: config file
+                if "model_args" not in kwargs:
+                    kwargs["model_args"] = {}
+                if "tokenizer_args" not in kwargs:
+                    kwargs["tokenizer_args"] = {}
+                if "config_args" not in kwargs:
+                    kwargs["config_args"] = {}
+
+                # 2nd priority: hub_kwargs
+                kwargs["model_args"].update(hub_kwargs)
+                kwargs["tokenizer_args"].update(hub_kwargs)
+                kwargs["config_args"].update(hub_kwargs)
+
+                # 1st priority: kwargs passed to SentenceTransformer
+                if model_kwargs:
+                    kwargs["model_args"].update(model_kwargs)
+                if tokenizer_kwargs:
+                    kwargs["tokenizer_args"].update(tokenizer_kwargs)
+                if config_kwargs:
+                    kwargs["config_args"].update(config_kwargs)
+
+                # Try to initialize the module with a lot of kwargs, but only if the module supports them
+                # Otherwise we fall back to the load method
+                # try:
+                module = module_class(model_name_or_path, cache_dir=cache_folder, **kwargs)
+                # except TypeError:
+                #     module = module_class.load(model_name_or_path)
+            else:
+                # Normalize does not require any files to be loaded
+                if module_class == Normalize:
+                    module_path = None
+                else:
+                    module_path = load_dir_path(
+                        model_name_or_path,
+                        module_config["path"],
+                        token=token,
+                        cache_folder=cache_folder,
+                        revision=revision,
+                        local_files_only=local_files_only,
+                    )
+                module = module_class.load(module_path)
+
+            modules[module_config["name"]] = module
+            module_kwargs[module_config["name"]] = module_config.get("kwargs", [])
+
+        if revision is None:
+            path_parts = Path(modules_json_path)
+            if len(path_parts.parts) >= 2:
+                revision_path_part = Path(modules_json_path).parts[-2]
+                if len(revision_path_part) == 40:
+                    revision = revision_path_part
+        self.model_card_data.set_base_model(model_name_or_path, revision=revision)
+        return modules, module_kwargs
 
 
+    def _load_module_class_from_ref(
+        self,
+        class_ref: str,
+        model_name_or_path: str,
+        trust_remote_code: bool,
+        revision: str | None,
+        model_kwargs: dict[str, Any] | None,
+    ) -> nn.Module:
+        # If the class is from sentence_transformers, we can directly import it,
+        # otherwise, we try to import it dynamically, and if that fails, we fall back to the default import
+        if class_ref.startswith("sentence_transformers."):
+            return import_from_string(class_ref)
+
+        if trust_remote_code:
+            code_revision = model_kwargs.pop("code_revision", None) if model_kwargs else None
+            try:
+                return get_class_from_dynamic_module(
+                    class_ref,
+                    model_name_or_path,
+                    revision=revision,
+                    code_revision=code_revision,
+                )
+            except OSError:
+                # Ignore the error if the file does not exist, and fall back to the default import
+                pass
+
+        return import_from_string(class_ref)
 
     @staticmethod
     def _get_scheduler(optimizer, scheduler: str, warmup_steps: int, t_total: int):
