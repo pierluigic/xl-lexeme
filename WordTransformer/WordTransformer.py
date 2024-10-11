@@ -317,7 +317,7 @@ class WordTransformer(nn.Sequential):
             input_was_string = True
 
         if device is None:
-            device = self._target_device
+            device = self.device
 
         self.to(device)
 
@@ -555,8 +555,8 @@ class WordTransformer(nn.Sequential):
             tokenized['input_ids'][j] = tokenized['input_ids'][j] + [self._first_module().tokenizer.convert_tokens_to_ids([self._first_module().tokenizer.pad_token])[0]]*(max_example_length-len(tokenized['input_ids'][j]))
             tokenized['attention_mask'][j] = tokenized['attention_mask'][j] + [0]*(max_example_length-len(tokenized['attention_mask'][j]))
 
-        tokenized['input_ids'] = torch.tensor(tokenized['input_ids']).to(self._target_device)
-        tokenized['attention_mask'] = torch.tensor(tokenized['attention_mask']).to(self._target_device)
+        tokenized['input_ids'] = torch.tensor(tokenized['input_ids']).to(self.device)
+        tokenized['attention_mask'] = torch.tensor(tokenized['attention_mask']).to(self.device)
 
         return tokenized
 
@@ -776,13 +776,13 @@ class WordTransformer(nn.Sequential):
         texts = [[] for _ in range(num_texts)]
         labels = [example.label for example in batch]
 
-        labels = torch.tensor(labels).to(self._target_device)
+        labels = torch.tensor(labels).to(self.device)
 
         sentence_features = []
 
         for idx in range(num_texts):
             tokenized = self.tokenize(batch,idx)
-            batch_to_device(tokenized, self._target_device)
+            batch_to_device(tokenized, self.device)
             sentence_features.append(tokenized)
 
         return sentence_features, labels
@@ -870,7 +870,7 @@ class WordTransformer(nn.Sequential):
             from torch.cuda.amp import autocast
             scaler = torch.cuda.amp.GradScaler()
 
-        self.to(self._target_device)
+        self.to(self.device)
 
         dataloaders = [dataloader for dataloader, _ in train_objectives]
 
@@ -880,7 +880,7 @@ class WordTransformer(nn.Sequential):
 
         loss_models = [loss for _, loss in train_objectives]
         for loss_model in loss_models:
-            loss_model.to(self._target_device)
+            loss_model.to(self.device)
 
         self.best_score = -9999999
 
