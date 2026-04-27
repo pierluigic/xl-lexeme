@@ -11,7 +11,7 @@ import transformers
 from huggingface_hub import HfApi, HfFolder, Repository, hf_hub_url
 import torch
 from torch import nn, Tensor, device
-from torch.optim import Optimizer
+from torch.optim import Optimizer, AdamW
 from torch.utils.data import DataLoader
 import torch.multiprocessing as mp
 from tqdm.autonotebook import trange
@@ -24,7 +24,7 @@ from typing import Any, Callable, Iterable, Iterator, Literal, overload, Union, 
 from sentence_transformers import __MODEL_HUB_ORGANIZATION__
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.model_card import SentenceTransformerModelCardData, generate_model_card
-from sentence_transformers.util import import_from_string, batch_to_device, fullname, snapshot_download
+from sentence_transformers.util import import_from_string, batch_to_device, fullname
 from sentence_transformers.models import Transformer, Pooling, Dense
 from sentence_transformers.model_card_templates import ModelCardTemplate
 from sentence_transformers import __version__
@@ -811,7 +811,7 @@ class WordTransformer(nn.Sequential):
             steps_per_epoch = None,
             scheduler: str = 'WarmupLinear',
             warmup_steps: int = 10000,
-            optimizer_class: Type[Optimizer] = transformers.AdamW,
+            optimizer_class: Type[Optimizer] = AdamW,
             optimizer_params : Dict[str, object]= {'lr': 2e-5},
             weight_decay: float = 0.01,
             evaluation_steps: int = 0,
