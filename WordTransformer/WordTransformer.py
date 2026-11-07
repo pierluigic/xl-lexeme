@@ -2,34 +2,40 @@ import json
 import logging
 import os
 import shutil
-import stat
 from collections import OrderedDict
-import requests
+import importlib
+import warnings
+from pathlib import Path
+import math
+import queue
+import tempfile
+from distutils.dir_util import copy_tree
+
 import numpy as np
 from numpy import ndarray
 import transformers
-from huggingface_hub import HfApi, HfFolder, Repository, hf_hub_url
+from transformers.dynamic_module_utils import get_class_from_dynamic_module
+from huggingface_hub import HfApi
+from huggingface_hub.utils import get_token
 import torch
 from torch import nn, Tensor, device
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 import torch.multiprocessing as mp
 from tqdm.autonotebook import trange
-from pathlib import Path
-import math
-import queue
-import tempfile
-from distutils.dir_util import copy_tree
-from typing import Any, Callable, Iterable, Iterator, Literal, overload, Union, List, Dict, Tuple, Optional, Type
+from typing import Any, Callable, Iterable, Union, List, Dict, Tuple, Optional, Type
 from sentence_transformers import __MODEL_HUB_ORGANIZATION__
 from sentence_transformers.evaluation import SentenceEvaluator
-from sentence_transformers.model_card import SentenceTransformerModelCardData, generate_model_card
-from sentence_transformers.util import import_from_string, batch_to_device, fullname, snapshot_download
-from sentence_transformers.models import Transformer, Pooling, Dense
-from sentence_transformers.model_card_templates import ModelCardTemplate
+from sentence_transformers.model_card import SentenceTransformerModelCardData
+from sentence_transformers.models import Transformer, Pooling, Normalize
+try:
+    from sentence_transformers.model_card_templates import ModelCardTemplate
+except ModuleNotFoundError:
+    from sentence_transformers.sentence_transformer.deprecated_model_card_templates import (
+        ModelCardTemplate,
+    )
 from sentence_transformers import __version__
 from sentence_transformers.similarity_functions import SimilarityFunction
-from sentence_transformers.models import Normalize, Pooling, Transformer
 from sentence_transformers.util import (
     batch_to_device,
     get_device_name,
@@ -37,11 +43,12 @@ from sentence_transformers.util import (
     is_sentence_transformer_model,
     load_dir_path,
     load_file_path,
-    save_to_hub_args_decorator,
-    truncate_embeddings,
+    fullname
 )
 
+
 logger = logging.getLogger(__name__)
+
 
 class WordTransformer(nn.Sequential):
     """
@@ -52,6 +59,7 @@ class WordTransformer(nn.Sequential):
     :param device: Device (like 'cuda' / 'cpu') that should be used for computation. If None, checks if a GPU can be used.
     :param cache_folder: Path to store models
     """
+
     def __init__(
         self,
         model_name_or_path: str | None = None,
@@ -274,9 +282,6 @@ class WordTransformer(nn.Sequential):
         # Pass the model to the model card data for later use in generating a model card upon saving this model
         self.model_card_data.register_model(self)
 
-
-
-
     def encode(self, sentences: Union[str, List[str]],
                batch_size: int = 32,
                show_progress_bar: bool = None,
@@ -302,7 +307,8 @@ class WordTransformer(nn.Sequential):
         """
         self.eval()
         if show_progress_bar is None:
-            show_progress_bar = (logger.getEffectiveLevel()==logging.INFO or logger.getEffectiveLevel()==logging.DEBUG)
+            show_progress_bar = (logger.getEffectiveLevel() ==
+                                 logging.INFO or logger.getEffectiveLevel() == logging.DEBUG)
 
         if convert_to_tensor:
             convert_to_numpy = False
@@ -312,7 +318,9 @@ class WordTransformer(nn.Sequential):
             convert_to_numpy = False
 
         input_was_string = False
-        if isinstance(sentences, str) or not hasattr(sentences, '__len__'): #Cast an individual sentence to a list with length 1
+        if isinstance(
+                sentences, str) or not hasattr(
+                sentences, '__len__'):  # Cast an individual sentence to a list with length 1
             sentences = [sentences]
             input_was_string = True
 
@@ -341,12 +349,12 @@ class WordTransformer(nn.Sequential):
                             last_mask_id -= 1
 
                         embeddings.append(token_emb[0:last_mask_id+1])
-                elif output_value is None:  #Return all outputs
+                elif output_value is None:  # Return all outputs
                     embeddings = []
                     for sent_idx in range(len(out_features['sentence_embedding'])):
-                        row =  {name: out_features[name][sent_idx] for name in out_features}
+                        row = {name: out_features[name][sent_idx] for name in out_features}
                         embeddings.append(row)
-                else:   #Sentence embeddings
+                else:  # Sentence embeddings
                     embeddings = out_features[output_value]
                     embeddings = embeddings.detach()
                     if normalize_embeddings:
@@ -369,8 +377,6 @@ class WordTransformer(nn.Sequential):
             all_embeddings = all_embeddings[0]
 
         return all_embeddings
-
-
 
     def start_multi_process_pool(self, target_devices: List[str] = None):
         """
@@ -396,12 +402,12 @@ class WordTransformer(nn.Sequential):
         processes = []
 
         for cuda_id in target_devices:
-            p = ctx.Process(target=SentenceTransformer._encode_multi_process_worker, args=(cuda_id, self, input_queue, output_queue), daemon=True)
+            p = ctx.Process(target=SentenceTransformer._encode_multi_process_worker,
+                            args=(cuda_id, self, input_queue, output_queue), daemon=True)
             p.start()
             processes.append(p)
 
         return {'input': input_queue, 'output': output_queue, 'processes': processes}
-
 
     @staticmethod
     def stop_multi_process_pool(pool):
@@ -418,8 +424,10 @@ class WordTransformer(nn.Sequential):
         pool['input'].close()
         pool['output'].close()
 
-
-    def encode_multi_process(self, sentences: List[str], pool: Dict[str, object], batch_size: int = 32, chunk_size: int = None):
+    def encode_multi_process(
+            self, sentences: List[str],
+            pool: Dict[str, object],
+            batch_size: int = 32, chunk_size: int = None):
         """
         This method allows to run encode() on multiple GPUs. The sentences are chunked into smaller packages
         and sent to individual processes, which encode these on the different GPUs. This method is only suitable
@@ -465,12 +473,11 @@ class WordTransformer(nn.Sequential):
         while True:
             try:
                 id, batch_size, sentences = input_queue.get()
-                embeddings = model.encode(sentences, device=target_device,  show_progress_bar=False, convert_to_numpy=True, batch_size=batch_size)
+                embeddings = model.encode(sentences, device=target_device, show_progress_bar=False,
+                                          convert_to_numpy=True, batch_size=batch_size)
                 results_queue.put([id, embeddings])
             except queue.Empty:
                 break
-
-
 
     def get_max_seq_length(self):
         """
@@ -480,7 +487,6 @@ class WordTransformer(nn.Sequential):
             return self._first_module().max_seq_length
 
         return None
-
 
     def center_sentence(self, input_ids, positions, max_seq_len):
         left = input_ids[:positions[0]]
@@ -501,11 +507,10 @@ class WordTransformer(nn.Sequential):
 
         return left + input_ids[positions[0]:positions[1]] + right
 
-
-    def tokenize_sentence(self,sentence,positions):
+    def tokenize_sentence(self, sentence, positions):
         left, target, right = sentence[:positions[0]], sentence[positions[0]:positions[1]], sentence[positions[1]:]
 
-        token_positions = [0,0]
+        token_positions = [0, 0]
         tokens = []
 
         if left:
@@ -519,26 +524,27 @@ class WordTransformer(nn.Sequential):
         if right:
             tokens += self._first_module().tokenizer.tokenize(right)
 
-        return tokens,token_positions
+        return tokens, token_positions
 
-    def tokenize_batch(self,batch,sentid=None):
+    def tokenize_batch(self, batch, sentid=None):
         max_example_length = 0
 
-        tokenized = {'input_ids':[], 'attention_mask':[]}
+        tokenized = {'input_ids': [], 'attention_mask': []}
 
         for example in batch:
             n_extra_tokens = 2
 
             if not sentid == None:
-                tokens ,token_positions = self.tokenize_sentence(example.texts[sentid],example.positions[sentid])
+                tokens, token_positions = self.tokenize_sentence(example.texts[sentid], example.positions[sentid])
             else:
-                tokens ,token_positions = self.tokenize_sentence(example.texts,example.positions)
+                tokens, token_positions = self.tokenize_sentence(example.texts, example.positions)
 
-            len_input= len(tokens) + n_extra_tokens
+            len_input = len(tokens) + n_extra_tokens
 
             if len_input > self._first_module().max_seq_length:
 
-                tokens = self.center_sentence(tokens, token_positions, self._first_module().max_seq_length - n_extra_tokens)
+                tokens = self.center_sentence(tokens, token_positions,
+                                              self._first_module().max_seq_length - n_extra_tokens)
 
             tokens = [self._first_module().tokenizer.cls_token] + tokens + [self._first_module().tokenizer.sep_token]
 
@@ -552,8 +558,10 @@ class WordTransformer(nn.Sequential):
                 max_example_length = len(input_ids)
 
         for j in range(len(tokenized['input_ids'])):
-            tokenized['input_ids'][j] = tokenized['input_ids'][j] + [self._first_module().tokenizer.convert_tokens_to_ids([self._first_module().tokenizer.pad_token])[0]]*(max_example_length-len(tokenized['input_ids'][j]))
-            tokenized['attention_mask'][j] = tokenized['attention_mask'][j] + [0]*(max_example_length-len(tokenized['attention_mask'][j]))
+            tokenized['input_ids'][j] = tokenized['input_ids'][j] + [self._first_module().tokenizer.convert_tokens_to_ids(
+                [self._first_module().tokenizer.pad_token])[0]]*(max_example_length-len(tokenized['input_ids'][j]))
+            tokenized['attention_mask'][j] = tokenized['attention_mask'][j] + \
+                [0]*(max_example_length-len(tokenized['attention_mask'][j]))
 
         tokenized['input_ids'] = torch.tensor(tokenized['input_ids']).to(self.device)
         tokenized['attention_mask'] = torch.tensor(tokenized['attention_mask']).to(self.device)
@@ -564,7 +572,7 @@ class WordTransformer(nn.Sequential):
         """
         Tokenizes the texts
         """
-        return self.tokenize_batch(texts,sentid)
+        return self.tokenize_batch(texts, sentid)
 
     def get_sentence_features(self, *features):
         return self._first_module().get_sentence_features(*features)
@@ -599,28 +607,30 @@ class WordTransformer(nn.Sequential):
         logger.info("Save model to {}".format(path))
         modules_config = []
 
-        #Save some model info
+        # Save some model info
         if '__version__' not in self._model_config:
             self._model_config['__version__'] = {
-                    'sentence_transformers': __version__,
-                    'transformers': transformers.__version__,
-                    'pytorch': torch.__version__,
-                }
+                'sentence_transformers': __version__,
+                'transformers': transformers.__version__,
+                'pytorch': torch.__version__,
+            }
 
         with open(os.path.join(path, 'config_sentence_transformers.json'), 'w') as fOut:
             json.dump(self._model_config, fOut, indent=2)
 
-        #Save modules
+        # Save modules
         for idx, name in enumerate(self._modules):
             module = self._modules[name]
-            if idx == 0 and isinstance(module, Transformer):    #Save transformer model in the main folder
+            if idx == 0 and isinstance(module, Transformer):  # Save transformer model in the main folder
                 model_path = path + "/"
             else:
                 model_path = os.path.join(path, str(idx)+"_"+type(module).__name__)
 
             os.makedirs(model_path, exist_ok=True)
             module.save(model_path)
-            modules_config.append({'idx': idx, 'name': name, 'path': os.path.basename(model_path), 'type': type(module).__module__})
+            modules_config.append(
+                {'idx': idx, 'name': name, 'path': os.path.basename(model_path),
+                 'type': type(module).__module__})
 
         with open(os.path.join(path, 'modules.json'), 'w') as fOut:
             json.dump(modules_config, fOut, indent=2)
@@ -639,12 +649,18 @@ class WordTransformer(nn.Sequential):
             tags = ModelCardTemplate.__TAGS__.copy()
             model_card = ModelCardTemplate.__MODEL_CARD__
 
-            if len(self._modules) == 2 and isinstance(self._first_module(), Transformer) and isinstance(self._last_module(), Pooling) and self._last_module().get_pooling_mode_str() in ['cls', 'max', 'mean']:
+            if len(self._modules) == 2 and isinstance(self._first_module(),
+                                                      Transformer) and isinstance(self._last_module(),
+                                                                                  Pooling) and self._last_module().get_pooling_mode_str() in ['cls', 'max', 'mean']:
                 pooling_module = self._last_module()
                 pooling_mode = pooling_module.get_pooling_mode_str()
-                model_card = model_card.replace("{USAGE_TRANSFORMERS_SECTION}", ModelCardTemplate.__USAGE_TRANSFORMERS__)
+                model_card = model_card.replace("{USAGE_TRANSFORMERS_SECTION}",
+                                                ModelCardTemplate.__USAGE_TRANSFORMERS__)
                 pooling_fct_name, pooling_fct = ModelCardTemplate.model_card_get_pooling_function(pooling_mode)
-                model_card = model_card.replace("{POOLING_FUNCTION}", pooling_fct).replace("{POOLING_FUNCTION_NAME}", pooling_fct_name).replace("{POOLING_MODE}", pooling_mode)
+                model_card = model_card.replace(
+                    "{POOLING_FUNCTION}", pooling_fct).replace(
+                    "{POOLING_FUNCTION_NAME}", pooling_fct_name).replace(
+                    "{POOLING_MODE}", pooling_mode)
                 tags.append('transformers')
 
             # Print full model
@@ -690,7 +706,7 @@ class WordTransformer(nn.Sequential):
         :param replace_model_card: If true, replace an existing model card in the hub with the automatically created model card
         :return: The url of the commit of your model in the given repository.
         """
-        token = HfFolder.get_token()
+        token = get_token()
         if token is None:
             raise ValueError("You must login to the Hugging Face hub on this computer by typing `transformers-cli login`.")
 
@@ -703,20 +719,17 @@ class WordTransformer(nn.Sequential):
                 raise ValueError("You passed and invalid repository name: {}.".format(repo_name))
 
         endpoint = "https://huggingface.co"
-        repo_url = HfApi(endpoint=endpoint).create_repo(
-                token=token,
-                repo_id=repo_name,
-                private=private,
-                repo_type=None,
-                exist_ok=exist_ok,
-            )
+        api = HfApi(endpoint=endpoint)
+        repo_url = api.create_repo(
+            token=token,
+            repo_id=repo_name,
+            private=private,
+            repo_type=None,
+            exist_ok=exist_ok,
+        )
         full_model_name = repo_url[len(endpoint)+1:].strip("/")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            # First create the repo (and clone its content if it's nonempty).
-            logging.info("Create repository and clone it if it exists")
-            repo = Repository(tmp_dir, clone_from=repo_url)
-
             # If user provides local files, copy them.
             if local_model_path:
                 copy_tree(local_model_path, tmp_dir)
@@ -724,42 +737,13 @@ class WordTransformer(nn.Sequential):
                 create_model_card = replace_model_card or not os.path.exists(os.path.join(tmp_dir, 'README.md'))
                 self.save(tmp_dir, model_name=full_model_name, create_model_card=create_model_card)
 
-            #Find files larger 5M and track with git-lfs
-            large_files = []
-            for root, dirs, files in os.walk(tmp_dir):
-                for filename in files:
-                    file_path = os.path.join(root, filename)
-                    rel_path = os.path.relpath(file_path, tmp_dir)
-
-                    if os.path.getsize(file_path) > (5 * 1024 * 1024):
-                        large_files.append(rel_path)
-
-            if len(large_files) > 0:
-                logging.info("Track files with git lfs: {}".format(", ".join(large_files)))
-                repo.lfs_track(large_files)
-
-            logging.info("Push model to the hub. This might take a while")
-            push_return = repo.push_to_hub(commit_message=commit_message)
-
-            def on_rm_error(func, path, exc_info):
-                # path contains the path of the file that couldn't be removed
-                # let's just assume that it's read-only and unlink it.
-                try:
-                    os.chmod(path, stat.S_IWRITE)
-                    os.unlink(path)
-                except:
-                    pass
-
-            # Remove .git folder. On Windows, the .git folder might be read-only and cannot be deleted
-            # Hence, try to set write permissions on error
-            try:
-                for f in os.listdir(tmp_dir):
-                    shutil.rmtree(os.path.join(tmp_dir, f), onerror=on_rm_error)
-            except Exception as e:
-                logging.warning("Error when deleting temp folder: {}".format(str(e)))
-                pass
-
-
+            push_return = api.upload_folder(
+                folder_path=tmp_dir,
+                repo_id=full_model_name,
+                repo_type=None,
+                token=token,
+                commit_message=commit_message,
+            )
         return push_return
 
     def smart_batching_collate(self, batch):
@@ -781,12 +765,11 @@ class WordTransformer(nn.Sequential):
         sentence_features = []
 
         for idx in range(num_texts):
-            tokenized = self.tokenize(batch,idx)
+            tokenized = self.tokenize(batch, idx)
             batch_to_device(tokenized, self.device)
             sentence_features.append(tokenized)
 
         return sentence_features, labels
-
 
     def _text_length(self, text: Union[List[int], List[List[int]]]):
         """
@@ -795,24 +778,24 @@ class WordTransformer(nn.Sequential):
         (representing several text inputs to the model).
         """
 
-        if isinstance(text, dict):              #{key: value} case
+        if isinstance(text, dict):  # {key: value} case
             return len(next(iter(text.values())))
-        elif not hasattr(text, '__len__'):      #Object has no len() method
+        elif not hasattr(text, '__len__'):  # Object has no len() method
             return 1
-        elif len(text) == 0 or isinstance(text[0], int):    #Empty string or list of ints
+        elif len(text) == 0 or isinstance(text[0], int):  # Empty string or list of ints
             return len(text)
         else:
-            return sum([len(t) for t in text])      #Sum of length of individual strings
+            return sum([len(t) for t in text])  # Sum of length of individual strings
 
     def fit(self,
             train_objectives: DataLoader,
             evaluator: SentenceEvaluator = None,
             epochs: int = 1,
-            steps_per_epoch = None,
+            steps_per_epoch=None,
             scheduler: str = 'WarmupLinear',
             warmup_steps: int = 10000,
-            optimizer_class: Type[Optimizer] = transformers.AdamW,
-            optimizer_params : Dict[str, object]= {'lr': 2e-5},
+            optimizer_class: Type[Optimizer] = torch.optim.AdamW,
+            optimizer_params: Dict[str, object] = {'lr': 2e-5},
             weight_decay: float = 0.01,
             evaluation_steps: int = 0,
             output_path: str = None,
@@ -854,17 +837,22 @@ class WordTransformer(nn.Sequential):
         :param checkpoint_save_total_limit: Total number of checkpoints to store
         """
 
-        ##Add info to model card
-        #info_loss_functions = "\n".join(["- {} with {} training examples".format(str(loss), len(dataloader)) for dataloader, loss in train_objectives])
-        info_loss_functions =  []
+        # Add info to model card
+        # info_loss_functions = "\n".join(["- {} with {} training examples".format(str(loss), len(dataloader)) for dataloader, loss in train_objectives])
+        info_loss_functions = []
         for dataloader, loss in train_objectives:
             info_loss_functions.extend(ModelCardTemplate.get_train_objective_info(dataloader, loss))
         info_loss_functions = "\n\n".join([text for text in info_loss_functions])
 
-        info_fit_parameters = json.dumps({"evaluator": fullname(evaluator), "epochs": epochs, "steps_per_epoch": steps_per_epoch, "scheduler": scheduler, "warmup_steps": warmup_steps, "optimizer_class": str(optimizer_class),  "optimizer_params": optimizer_params, "weight_decay": weight_decay, "evaluation_steps": evaluation_steps, "max_grad_norm": max_grad_norm }, indent=4, sort_keys=True)
+        info_fit_parameters = json.dumps({"evaluator": fullname(evaluator),
+                                          "epochs": epochs, "steps_per_epoch": steps_per_epoch, "scheduler": scheduler,
+                                          "warmup_steps": warmup_steps, "optimizer_class": str(optimizer_class),
+                                          "optimizer_params": optimizer_params, "weight_decay": weight_decay,
+                                          "evaluation_steps": evaluation_steps, "max_grad_norm": max_grad_norm},
+                                         indent=4, sort_keys=True)
         self._model_card_text = None
-        self._model_card_vars['{TRAINING_SECTION}'] = ModelCardTemplate.__TRAINING_SECTION__.replace("{LOSS_FUNCTIONS}", info_loss_functions).replace("{FIT_PARAMETERS}", info_fit_parameters)
-
+        self._model_card_vars['{TRAINING_SECTION}'] = ModelCardTemplate.__TRAINING_SECTION__.replace(
+            "{LOSS_FUNCTIONS}", info_loss_functions).replace("{FIT_PARAMETERS}", info_fit_parameters)
 
         if use_amp:
             from torch.cuda.amp import autocast
@@ -897,16 +885,17 @@ class WordTransformer(nn.Sequential):
 
             no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
             optimizer_grouped_parameters = [
-                {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
-                {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-            ]
+                {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
+                 'weight_decay': weight_decay},
+                {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
+                 'weight_decay': 0.0}]
 
             optimizer = optimizer_class(optimizer_grouped_parameters, **optimizer_params)
-            scheduler_obj = self._get_scheduler(optimizer, scheduler=scheduler, warmup_steps=warmup_steps, t_total=num_train_steps)
+            scheduler_obj = self._get_scheduler(optimizer, scheduler=scheduler,
+                                                warmup_steps=warmup_steps, t_total=num_train_steps)
 
             optimizers.append(optimizer)
             schedulers.append(scheduler_obj)
-
 
         global_step = 0
         data_iterators = [iter(dataloader) for dataloader in dataloaders]
@@ -935,9 +924,7 @@ class WordTransformer(nn.Sequential):
                         data_iterators[train_idx] = data_iterator
                         data = next(data_iterator)
 
-
                     features, labels = data
-
 
                     if use_amp:
                         with autocast():
@@ -975,16 +962,13 @@ class WordTransformer(nn.Sequential):
                 if checkpoint_path is not None and checkpoint_save_steps is not None and checkpoint_save_steps > 0 and global_step % checkpoint_save_steps == 0:
                     self._save_checkpoint(checkpoint_path, checkpoint_save_total_limit, global_step)
 
-
             self._eval_during_training(evaluator, output_path, save_best_model, epoch, -1, callback)
 
-        if evaluator is None and output_path is not None:   #No evaluator, but output path: save final model version
+        if evaluator is None and output_path is not None:  # No evaluator, but output path: save final model version
             self.save(output_path)
 
         if checkpoint_path is not None:
             self._save_checkpoint(checkpoint_path, checkpoint_save_total_limit, global_step)
-
-
 
     def evaluate(self, evaluator: SentenceEvaluator, output_path: str = None):
         """
@@ -1031,12 +1015,12 @@ class WordTransformer(nn.Sequential):
                 old_checkpoints = sorted(old_checkpoints, key=lambda x: x['step'])
                 shutil.rmtree(old_checkpoints[0]['path'])
 
-
     def _load_auto_model(self, model_name_or_path):
         """
         Creates a simple Transformer + Mean Pooling model and returns the modules
         """
-        logging.warning("No sentence-transformers model found with name {}. Creating a new one with MEAN pooling.".format(model_name_or_path))
+        logging.warning(
+            "No sentence-transformers model found with name {}. Creating a new one with MEAN pooling.".format(model_name_or_path))
         transformer_model = Transformer(model_name_or_path)
         pooling_model = Pooling(transformer_model.get_word_embedding_dimension(), 'mean')
         return [transformer_model, pooling_model]
@@ -1231,7 +1215,6 @@ class WordTransformer(nn.Sequential):
         self.model_card_data.set_base_model(model_name_or_path, revision=revision)
         return modules, module_kwargs
 
-
     def _load_module_class_from_ref(
         self,
         class_ref: str,
@@ -1271,11 +1254,14 @@ class WordTransformer(nn.Sequential):
         elif scheduler == 'warmupconstant':
             return transformers.get_constant_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps)
         elif scheduler == 'warmuplinear':
-            return transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
+            return transformers.get_linear_schedule_with_warmup(
+                optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
         elif scheduler == 'warmupcosine':
-            return transformers.get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
+            return transformers.get_cosine_schedule_with_warmup(
+                optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
         elif scheduler == 'warmupcosinewithhardrestarts':
-            return transformers.get_cosine_with_hard_restarts_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
+            return transformers.get_cosine_with_hard_restarts_schedule_with_warmup(
+                optimizer, num_warmup_steps=warmup_steps, num_training_steps=t_total)
         else:
             raise ValueError("Unknown scheduler {}".format(scheduler))
 

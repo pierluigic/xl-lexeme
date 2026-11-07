@@ -1,26 +1,27 @@
 import setuptools
-from pip._internal.network.session import PipSession
-from pip._internal.req import parse_requirements
-from os import path
+from pathlib import Path
 
-__version__ = '0.0.1'
-here = path.abspath(path.dirname(__file__))
+__version__ = '0.0.2'
+here = Path(__file__).resolve().parent
 
-# get the dependencies and installs
-# parse_requirements() returns generator of pip._internal.req.req_file.ParsedRequirement objects
-session = PipSession()
-install_reqs = parse_requirements('requirements.txt', session=session)
+def load_requirements():
+    requirements_path = here / 'requirements.txt'
+    if not requirements_path.exists():
+        return []
 
-# reqs is a list of requirement
-try:
-    reqs = [str(ir.req) for ir in install_reqs]
-except:
-    reqs = [str(ir.requirement) for ir in install_reqs]
+    lines = requirements_path.read_text().splitlines()
+    requirements = []
+    for line in lines:
+        stripped = line.split('#', 1)[0].strip()
+        if stripped:
+            requirements.append(stripped)
+    return requirements
 
+reqs = load_requirements()
 reqs.append('sentence-transformers')
 
 setuptools.setup(
-    name="WordTransformer",
+    name="WordTransformer-LanguageChange",
     version=__version__,
     author="Pierluigi Cassotti",
     description="WiC Pretrained Model for Cross-Lingual LEXical sEMantic changE",
